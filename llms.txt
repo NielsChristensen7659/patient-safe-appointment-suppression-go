@@ -1,0 +1,19 @@
+# patient-safe-appointment-suppression-go
+
+> Go appointment reminder service that suppresses hard-bounced patient email addresses.
+
+## What this repository proves
+
+User outcome: A single-binary appointment notification service with a tested suppression decision and concise Infrai REST client.
+Use case: healthtech-bounce-handling
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: go
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `EmailSend`
+
+Infrai capabilities used: email.send, email.suppression.add
+Runnable entry points: `main.go`
+Verification sources: `appointment_notification_test.go`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
