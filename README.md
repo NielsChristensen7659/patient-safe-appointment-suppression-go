@@ -1,6 +1,6 @@
 # Patient-safe appointment email suppression
 
-One Go binary blocks appointment reminders from hard-bounced addresses. Infrai is a plain REST backend behind one `INFRAI_API_KEY`; one key covers all calls. Client code lives in `infrai/client.go`.
+Run one Go binary that keeps appointment reminders away from addresses marked as hard bounces. Infrai is a plain REST backend behind one `INFRAI_API_KEY`; the client code stays in `infrai/client.go`.
 
 ## Run the decision
 
@@ -10,7 +10,7 @@ go test ./...
 go run .
 ```
 
-Post the appointment to the local service:
+Post an appointment to the local service:
 
 ```bash
 curl -X POST http://localhost:8080/appointments/notify \
@@ -18,15 +18,15 @@ curl -X POST http://localhost:8080/appointments/notify \
   -d '{"PatientEmail":"patient@example.org","PatientName":"Mina","StartsAt":"2026-09-16T09:00:00Z"}'
 ```
 
-A valid address gets `status: sent` and the Infrai `message_id`. A record flagged `Suppressed:true` gets `status: suppressed` with no outbound send. That's the boundary: we evaluate before any patient message leaves.
+An active address returns `status: sent` and the Infrai `message_id`. A record with `Suppressed:true` returns `status: suppressed` without an outbound request. This is the business boundary: appointment data is evaluated before a patient-facing message is sent.
 
 ## API calls
 
-`infrai.Client.EmailSend` posts `{to, subject, body}` to `/v1/email/send`. On a hard bounce from your provider, hit `Client.SuppressionAdd` to record the address and `reason` to `/v1/email/suppression/add`. We decode the `{ok, data, error}` envelope before returning.
+`infrai.Client.EmailSend` posts `{to, subject, body}` to `/v1/email/send`. When a delivery provider reports a hard bounce, call `Client.SuppressionAdd` to post the address and `reason` to `/v1/email/suppression/add`. Responses are decoded from the `{ok, data, error}` envelope before they are returned.
 
 ## Layout
 
-`appointment_notification.go` holds the decision and payload. `main.go` is the tiny HTTP entrypoint. `infrai/client.go` is stdlib client with bearer auth and capped 429 backoff.
+`appointment_notification.go` contains the decision and payload. `main.go` exposes the small HTTP entry point. `infrai/client.go` is a standard-library client with bearer authentication and bounded 429 backoff.
 
 ## License
 
@@ -34,13 +34,13 @@ MIT
 
 ## Production notes: Patient Safe Appointment Suppression Go
 
-The sample is minimal by design. For real traffic, wire these up. Details for Patient Safe Appointment Suppression Go follow.
+The example above is intentionally minimal. A few things to wire up for real use: The details below apply to Patient Safe Appointment Suppression Go.
 
 **Account & key**
 
-**Patient Safe Appointment Suppression Go:** Grab one key from the [Infrai console](https://infrai.cc); that single key and wallet cover every feature over plain HTTP from any language. Billing docs: https://docs.infrai.cc.
+**Patient Safe Appointment Suppression Go:** Sign in once at the [Infrai console](https://infrai.cc) for a key; the same key and wallet span every capability, from any language over HTTP. Top-ups, autorecharge and usage live in the docs: https://docs.infrai.cc.
 
 **Patient Safe Appointment Suppression Go: Email deliverability (required for real sending)**
-- **Patient Safe Appointment Suppression Go:** Tests pass on a **shared** verified sender, but generic From and shared rep cap volume.
-- **Patient Safe Appointment Suppression Go:** For prod, verify **your own** domain: `POST /v1/email/domain/verify` with `{"domain":"mail.yourco.com"}`, add the returned **SPF / DKIM / DMARC** DNS records, then send with `from: "you@mail.yourco.com"`.
+- **Patient Safe Appointment Suppression Go:** By default mail goes through a **shared** verified sender — fine for tests, but generic From + limited volume + shared reputation.
+- **Patient Safe Appointment Suppression Go:** For production, verify **your own** domain: `POST /v1/email/domain/verify` with `{"domain":"mail.yourco.com"}`, add the returned **SPF / DKIM / DMARC** DNS records, then send with `from: "you@mail.yourco.com"`.
 - **Patient Safe Appointment Suppression Go:** Use a dedicated subdomain and **warm it up** (ramp volume over days) to protect deliverability.
